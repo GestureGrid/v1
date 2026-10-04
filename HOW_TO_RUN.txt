@@ -1,0 +1,156 @@
+SignMaster (ASL sign recognition) - How to run
+===============================================
+
+There are two parts to this guide:
+
+  PART 1 - FIRST-TIME SETUP    Do this once, right after you download/clone the project.
+  PART 2 - RUNNING THE APP     Do this every time you want to use it.
+
+
+WHAT'S IN HERE
+--------------
+  server.py                             Flask backend. Receives webcam frames from the website
+                                        and returns the predicted ASL letter (port 5000).
+  cam.py                                Standalone desktop webcam demo (OpenCV window, no browser).
+  login.html / index.html / script.js   The website (frontend).
+  asl_model_improved_continued.joblib   Trained model (letters A-Z).
+  requirements.txt                      Python packages (pinned versions).
+
+
+WHY PYTHON 3.11?
+----------------
+The code uses mediapipe's "mp.solutions" API, which only exists in older mediapipe
+(0.10.9 here). That version needs Python 3.11 or older. Newer mediapipe versions
+(the only ones available for Python 3.13+) removed mp.solutions.
+
+So the project runs inside a virtual environment called ".venv" that uses Python 3.11,
+no matter which Python your system has installed.
+
+
+===============================================
+PART 1 - FIRST-TIME SETUP (do this once)
+===============================================
+Open a terminal in the project folder (the folder this file is in), then follow the
+steps for your operating system.
+
+
+--- Linux / macOS ---
+
+Step 1. Install "uv" (a tool that downloads Python 3.11 and installs packages for you).
+        Skip this if you already have it ("uv --version" prints a version number).
+
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+
+        Then close and reopen the terminal so the "uv" command is found.
+
+Step 2. Create the virtual environment with Python 3.11:
+
+            uv venv --python 3.11 .venv
+
+Step 3. Install the required packages into it:
+
+            uv pip install --python .venv/bin/python -r requirements.txt
+
+Step 4. Check that it worked:
+
+            .venv/bin/python -c "import mediapipe, sklearn, flask; print('Setup OK')"
+
+        If you see "Setup OK", you're done. Go to PART 2.
+
+
+--- Windows ---
+
+Step 1. Install Python 3.11 from https://www.python.org/downloads/
+        (during install, tick "Add python.exe to PATH").
+
+Step 2. Create the virtual environment with Python 3.11:
+
+            py -3.11 -m venv .venv
+
+Step 3. Install the required packages into it:
+
+            .venv\Scripts\pip install -r requirements.txt
+
+Step 4. Check that it worked:
+
+            .venv\Scripts\python -c "import mediapipe, sklearn, flask; print('Setup OK')"
+
+        If you see "Setup OK", you're done. Go to PART 2.
+
+
+You only need to repeat PART 1 if you delete the .venv folder or move the project
+to a different computer.
+
+
+===============================================
+PART 2 - RUNNING THE APP (every time)
+===============================================
+You need TWO terminals, both opened in the project folder.
+
+Step 1. In the FIRST terminal, start the backend server and leave it running:
+
+            Linux / macOS:   .venv/bin/python server.py
+            Windows:         .venv\Scripts\python server.py
+
+        Wait until you see:  "Running on http://127.0.0.1:5000"
+
+Step 2. In the SECOND terminal, serve the website:
+
+            Linux / macOS:   python3 -m http.server 8000
+            Windows:         py -m http.server 8000
+
+Step 3. In your browser go to:
+
+            http://localhost:8000/login.html
+
+        Enter any username/password (the login is only cosmetic) and allow camera
+        access when the browser asks.
+
+To stop: press Ctrl+C in each terminal.
+
+(Opening login.html straight from the file manager usually works too, but serving it on
+localhost is the more reliable way to get camera permission in every browser.)
+
+
+OPTIONAL: desktop webcam demo (no browser, no server needed)
+------------------------------------------------------------
+            Linux / macOS:   .venv/bin/python cam.py
+            Windows:         .venv\Scripts\python cam.py
+
+A window opens showing your webcam with the predicted letter. Press "q" to quit.
+
+
+OPTIONAL: activate the venv instead of typing the full path
+-----------------------------------------------------------
+            Linux / macOS:   source .venv/bin/activate
+            Windows:         .venv\Scripts\activate
+
+After that, plain "python server.py" uses the venv. Type "deactivate" when done.
+
+
+===============================================
+TROUBLESHOOTING
+===============================================
+- "AttributeError: module 'mediapipe' has no attribute 'solutions'"
+      You ran it with the system Python, not the venv. Use .venv/bin/python
+      (Windows: .venv\Scripts\python), or activate the venv first.
+
+- "No such file or directory: .venv/bin/python"  (or the Windows equivalent)
+      The virtual environment doesn't exist yet. Do PART 1 first.
+
+- "InconsistentVersionWarning ... StandardScaler from version 1.7.2"
+      Wrong scikit-learn version. The model was saved with 1.7.2; reinstall from
+      requirements.txt (PART 1, step 3).
+
+- "Address already in use" on port 5000 or 8000
+      Another copy is still running. Close it, or find it with:  ss -ltnp | grep 5000
+
+- Website shows no predictions
+      Make sure server.py is running (PART 2, step 1). The site sends frames to
+      http://127.0.0.1:5000/predict (see script.js).
+
+- Camera not opening in cam.py
+      Check that another app (e.g. the browser tab) isn't already using the webcam.
+
+- "final hand/arduino_servo_receiver.ino" is an empty file. No Arduino code is
+  included yet, so nothing needs to be uploaded to a board.
